@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSV Upload Preview (Max 10 Records)</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 </head>
 <body>
     <div class="container mt-5">
@@ -13,8 +14,15 @@
         <button class="btn btn-primary mt-2" onclick="processCSV()">Preview</button>
 
         <h3 class="mt-4">Preview Data</h3>
-        <table id="previewTable" class="table table-striped mt-3"></table>
+        <table id="previewTable" class="table table-striped mt-3" style="width:100%">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
     </div>
+
+    <!-- Include jQuery and DataTables.js -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <script>
         function processCSV() {
@@ -29,22 +37,51 @@
             let reader = new FileReader();
             reader.onload = function(e) {
                 let lines = e.target.result.trim().split("\n");
-                
-                // Validate that file has at most 10 records
-                if (lines.length > 11) {  // Includes header + 10 records
+
+                // Validate max 10 records (excluding header)
+                if (lines.length > 11) {
                     alert("Error: CSV file must contain at most 10 records (excluding header).");
                     return;
                 }
 
-                let tableHTML = "<tr><th>" + lines[0].split(",").join("</th><th>") + "</th></tr>";
+                let headers = lines[0].split(",");
+                let tableHTML = "<tr><th>" + headers.join("</th><th>") + "</th></tr>";
+                let tableBody = "";
+
                 for (let i = 1; i < lines.length; i++) {
-                    tableHTML += "<tr><td>" + lines[i].split(",").join("</td><td>") + "</td></tr>";
+                    tableBody += "<tr><td>" + lines[i].split(",").join("</td><td>") + "</td></tr>";
                 }
-                document.getElementById("previewTable").innerHTML = tableHTML;
+
+                // Clear previous preview data
+                if ($.fn.DataTable.isDataTable("#previewTable")) {
+                    $("#previewTable").DataTable().destroy();
+                }
+
+                document.querySelector("#previewTable thead").innerHTML = tableHTML;
+                document.querySelector("#previewTable tbody").innerHTML = tableBody;
+
+                // Initialize DataTable with pagination
+                $("#previewTable").DataTable({
+                    paging: true,
+                    pageLength: 5, // Show 5 rows per page
+                    searching: true, // Enable search
+                    ordering: true, // Enable sorting
+                    lengthChange: false, // Disable "Show X entries" option
+                    info: false // Hide "Showing X of Y entries"
+                });
             };
 
             reader.readAsText(file);
         }
+
+        // Clear preview when a new file is selected
+        document.getElementById("csvFile").addEventListener("change", function() {
+            if ($.fn.DataTable.isDataTable("#previewTable")) {
+                $("#previewTable").DataTable().destroy();
+            }
+            document.querySelector("#previewTable thead").innerHTML = "";
+            document.querySelector("#previewTable tbody").innerHTML = "";
+        });
     </script>
 </body>
 </html>
