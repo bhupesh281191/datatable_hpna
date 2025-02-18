@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Upload Preview (Max 10 Records)</title>
+    <title>CSV Upload Preview (Max 10 Records - Fast Rendering)</title>
     
     <!-- Bootstrap & DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     <style>
-        /* Responsive styling for large column tables */
         .table-container {
             max-width: 100%;
             overflow-x: auto;
@@ -34,16 +33,21 @@
             top: 0;
             z-index: 2;
         }
-        /* Hide the submit button initially */
         #submitBtn {
+            display: none;
+        }
+        #errorAlert {
             display: none;
         }
     </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h2 class="text-center">Upload CSV File (Max 10 Records)</h2>
+        <h2 class="text-center">Upload CSV File (Fast Preview, Max 10 Records)</h2>
         
+        <!-- Bootstrap Error Alert -->
+        <div id="errorAlert" class="alert alert-danger" role="alert"></div>
+
         <div class="mb-3">
             <input type="file" id="csvFile" accept=".csv" required class="form-control">
         </div>
@@ -75,14 +79,26 @@
             return dd + mm + yyyy;
         }
 
+        function showError(message) {
+            let errorAlert = document.getElementById("errorAlert");
+            errorAlert.innerText = message;
+            errorAlert.style.display = "block";
+        }
+
+        function hideError() {
+            document.getElementById("errorAlert").style.display = "none";
+        }
+
         function processCSV() {
             let fileInput = document.getElementById("csvFile");
             let file = fileInput.files[0];
 
             if (!file) {
-                alert("Please select a CSV file.");
+                showError("Please select a CSV file.");
                 return;
             }
+
+            hideError(); // Hide previous errors
 
             // Get the current date in ddmmyyyy format
             let currentDate = getCurrentDate();
@@ -90,55 +106,61 @@
 
             // Validate filename format (it should match today's date)
             if (file.name !== expectedFilename) {
-                alert(`Invalid filename! Expected format: ${expectedFilename}`);
+                showError(`Invalid filename! Expected format: ${expectedFilename}`);
                 return;
             }
 
+            // Read file as a text blob
             let reader = new FileReader();
             reader.onload = function(e) {
-                let lines = e.target.result.trim().split("\n");
-
+                let text = e.target.result;
+                let lines = text.split(/\r\n|\n/); // Support different line endings
+                
                 // Validate max 10 records (excluding header)
                 if (lines.length !== 11) { // 1 header + 10 records = 11 lines
-                    alert("Error: CSV file must contain exactly 10 records (excluding header).");
-                    document.getElementById("submitBtn").style.display = "none"; // Hide submit button
+                    showError("Error: CSV file must contain exactly 10 records (excluding header).");
+                    document.getElementById("submitBtn").style.display = "none";
                     return;
                 }
 
                 let headers = lines[0].split(",");
                 let tableHeaders = "<tr><th>" + headers.join("</th><th>") + "</th></tr>";
-                let tableBody = "";
 
+                let tableBody = "";
+                let rowBatch = [];
+                
                 for (let i = 1; i < lines.length; i++) {
                     let row = lines[i].split(",");
-                    tableBody += "<tr><td>" + row.join("</td><td>") + "</td></tr>";
+                    rowBatch.push("<tr><td>" + row.join("</td><td>") + "</td></tr>");
                 }
 
-                // Clear previous preview
-                if ($.fn.DataTable.isDataTable("#previewTable")) {
-                    $("#previewTable").DataTable().destroy();
+                tableBody = rowBatch.join("");
+
+                // Clear previous preview efficiently
+                let previewTable = $("#previewTable");
+                if ($.fn.DataTable.isDataTable(previewTable)) {
+                    previewTable.DataTable().destroy();
                 }
 
                 document.querySelector("#previewTable thead").innerHTML = tableHeaders;
                 document.querySelector("#previewTable tbody").innerHTML = tableBody;
 
-                // Initialize DataTable with responsiveness
-                $("#previewTable").DataTable({
-                    paging: true,
-                    pageLength: 5, // Show 5 rows per page
-                    searching: true,
-                    ordering: true,
+                // Initialize DataTable with faster rendering
+                previewTable.DataTable({
+                    paging: false, // Avoid unnecessary re-renders
+                    searching: false, // Speed up performance
+                    ordering: false,
                     scrollX: true, // Enable horizontal scrolling
-                    autoWidth: false, // Prevent auto column width distortion
-                    lengthChange: false, // Disable changing number of rows displayed
-                    info: false // Hide "Showing X of Y entries"
+                    autoWidth: false,
+                    lengthChange: false,
+                    info: false
                 });
 
                 // Show the submit button if the record count is exactly 10
                 document.getElementById("submitBtn").style.display = "block";
             };
 
-            reader.readAsText(file);
+            reader.readAsText(file); // Read as text (faster than JSON parsing)
         }
 
         function submitCSV() {
@@ -154,6 +176,7 @@
             document.querySelector("#previewTable thead").innerHTML = "";
             document.querySelector("#previewTable tbody").innerHTML = "";
             document.getElementById("submitBtn").style.display = "none"; // Hide submit button on file change
+            hideError(); // Hide any previous errors
         });
     </script>
 </body>
