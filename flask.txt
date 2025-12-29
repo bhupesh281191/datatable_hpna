@@ -1,38 +1,10 @@
-Here’s a side-by-side comparison of the Excel filter logic vs the Python script logic, with the key differences highlighted.
+Great — here’s an updated Jira comment that clearly references what Jayesh asked in the mail:
 
-#	Filter / Rule	Excel (Screenshot-1)	Python Script (Screenshot-2)	Difference
-1	Product Tier-1 = NETWORK INFRASTRUCTURE	Yes – explicitly listed	Not shown	❌ Missing in code (or handled earlier, not visible here)
-2	Status = Deployed	Yes	Not shown	❌ Missing in code
-3	Product Tier-3 (Routers, Switch, LB, etc.)	Yes – explicit list	Not shown	❌ Missing in code
-4	Mark as Deleted != 1	Yes	Not shown	❌ Missing in code
-5	Exclude Manufacturers	CLOUDGENIX, WESTERN TELEMATIC, SYMANTEC, NOVIFLOW, BROCADE, QLOGIC, VIDYO, BLADE NETWORK TECHNOLOGIES INC	Includes ALL Excel names PLUS GIGAMON, NETSCOUT SYSTEMS, ARBOR NETWORKS, SKYBOX SECURITY, TIPPINGPOINT	✅ Code excludes more manufacturers than Excel
-6	Exclude Products (VC & ONS modules)	1/10Gb-F VC Ethernet Module Cisco ONS MSTP VC 4Gb FC Module VC Flex-10/10D VC FlexFabric-20/40	Same list present	✅ Matches
-7	Exclude Serial containing “_STACK”	Yes	Yes	✅ Matches
-8	Exclude AVI Load Balancers where CI_NAME contains “-”	Yes	Present but appears commented / disabled	⚠ Possible mismatch
-9	Exclude Juniper EX4200, M120	Yes	Yes	✅ Matches
-10	Exclude records older than 2 months (LAST_SCAN_DATE)	Yes	Not shown	❌ Missing in code
-11	Exclude NULL Serial Numbers	Yes	Not explicitly shown	⚠ Possibly missing
-12	Deduplicate Serial Numbers (keep first)	Yes	Yes	✅ Matches
-13	Exclude SYSTEM_ENV = Development / UAT	Yes	Yes	✅ Matches
-14	Exclude PRODUCT starting with “NEXUS 2”	Yes	Yes – explicitly handled	✅ Matches
-15	Export duplicates for review	Not mentioned	Yes – code writes CSV report	➕ Extra step in code
+Jira Comment:
 
+Validated all three items requested by Jayesh:
+• Compared GTZ SevOne filter logic vs auto-seeding logic
+• Checked whether System Environment + Contingency are included in auto-seeding
+• Compared GTZ HPNA logic with the latest known HPNA auto-seed logic
 
-⸻
-
-🔍 Summary (Simple)
-	•	✅ Most device-level exclusions match
-	•	➕ Code has more manufacturers excluded
-	•	⚠ AVI filter might be disabled in code
-	•	❌ These Excel filters are NOT visible in code:
-	•	Product Tier1 filter
-	•	Status filter
-	•	Product Tier3 filter
-	•	Mark as Deleted != 1
-	•	Last Scan Date > 2 months
-	•	NULL Serial Number removal
-
-If you want, I can also:
-
-✔ rewrite the Python to match Excel 1-to-1
-✔ or produce a clean checklist for validation
+I have completed the analysis for all three and am preparing a detailed document with findings. Will revert back over email shortly.
